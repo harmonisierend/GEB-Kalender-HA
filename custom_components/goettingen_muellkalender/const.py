@@ -3,12 +3,19 @@ from __future__ import annotations
 
 DOMAIN = "goettingen_muellkalender"
 
-CONF_ICS_URL = "ics_url"
+CONF_STREET = "street"
+CONF_HOUSE_NUMBER = "house_number"
 CONF_NAME = "name"
 CONF_SCAN_INTERVAL = "scan_interval"
 
 DEFAULT_NAME = "Müllkalender Göttingen"
 DEFAULT_SCAN_INTERVAL_HOURS = 12
+
+# GEB publishes a personal iCalendar export per street/house number at
+# https://abfuhr.geb-goettingen.de/<year>/forward.php?str=<street>+&nr=<house_number>&year=<year>
+# Discovered from a live example (Lindenweg 15) since GEB has no public
+# API docs; the URL pattern moves the year into the path each year.
+FORWARD_URL_TEMPLATE = "https://abfuhr.geb-goettingen.de/{year}/forward.php"
 
 # How far back/forward to look when expanding calendar events.
 LOOKBACK_DAYS = 1
@@ -46,7 +53,7 @@ CATEGORY_DEFINITIONS: list[dict[str, object]] = [
         "slug": "gelber_sack",
         "name": "Gelber Sack / Wertstoff",
         "icon": "mdi:recycle",
-        "keywords": ("gelber sack", "gelbe tonne", "wertstoff", "verpackung"),
+        "keywords": ("gelber sack", "gelben sack", "gelbe tonne", "wertstoff", "verpackung", "sack"),
     },
     {
         "slug": "sperrmuell",

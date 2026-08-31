@@ -7,19 +7,20 @@ einen Sensor mit dem nächsten Abholtermin in Home Assistant anlegt.
 
 ## Funktionsweise
 
-Die GEB-Webseite erzeugt nach Auswahl von Straße und Hausnummer einen
-individuellen, abonnierbaren Kalender (ICS/vCalendar). Diese Integration lädt
-genau diesen Kalender-Link in einem einstellbaren Intervall herunter,
-erkennt die Abfallart anhand des Termintitels und legt pro erkannter
-Abfallart einen Sensor mit Datum der nächsten Abholung an.
+Bei der Einrichtung gibst du nur **Straße und Hausnummer** an. Die
+Integration baut daraus automatisch die URL zum persönlichen
+iCalendar-Export der GEB:
 
-Es ist bewusst **keine** feste Adress-Abfrage (Straße/Hausnummer) gegen die
-GEB-Webseite eingebaut: Der interne API-Aufruf der Webseite konnte aus dieser
-Umgebung heraus nicht eingesehen werden (Netzwerkzugriff auf
-geb-goettingen.de war blockiert), sodass geratene Parameter mit hoher
-Wahrscheinlichkeit nicht funktioniert hätten. Der Kalender-Link ist dafür
-robust gegen Änderungen an der Webseite und lässt sich in wenigen Schritten
-selbst besorgen (siehe unten).
+```
+https://abfuhr.geb-goettingen.de/<Jahr>/forward.php?str=<Straße>+&nr=<Hausnummer>&year=<Jahr>
+```
+
+Diese URL wird in einem einstellbaren Intervall abgerufen, die Termine
+werden anhand des Titels (z.B. "[GEB] Abfuhr der Restmülltonne") einer
+Abfallart zugeordnet, und pro Abfallart entsteht ein Sensor mit dem
+nächsten Abholdatum. Ab November wird zusätzlich der Kalender des
+Folgejahres abgerufen, damit die Sensoren über den Jahreswechsel hinweg
+befüllt bleiben.
 
 ## Installation über HACS
 
@@ -30,22 +31,10 @@ selbst besorgen (siehe unten).
 4. Home Assistant neu starten.
 5. **Einstellungen → Geräte & Dienste → Integration hinzufügen** → nach
    "Göttinger Müllkalender" suchen.
-
-## Deinen Kalender-Link besorgen
-
-1. Seite [geb-goettingen.de/abfuhr](https://www.geb-goettingen.de/abfuhr/)
-   öffnen und Straße + Hausnummer auswählen.
-2. Nach der Option zum **Exportieren/Abonnieren** des Kalenders suchen
-   (z. B. "Kalender exportieren", "Als ICS/vCalendar", "In Kalender-App
-   abonnieren"). Den dortigen Link kopieren (beginnt meist mit `http(s)://`
-   oder `webcal://`).
-3. Bietet die Seite nur einen Datei-Download (`.ics`/`.vcs`) statt eines
-   Links an: Datei herunterladen und irgendwo mit öffentlich erreichbarer
-   URL bereitstellen, z. B. per Nextcloud-Freigabe, GitHub Gist ("Raw"-Link)
-   oder einem eigenen Webserver. Diese URL dann verwenden.
-4. Den Link im Konfigurationsdialog der Integration eintragen. Beim
-   Einrichten wird der Kalender einmal testweise abgerufen und geparst –
-   klappt das nicht, wird ein Fehler mit Grund angezeigt.
+6. Straße und Hausnummer genau wie auf der GEB-Webseite eingeben (z.B.
+   "Lindenweg" und "15"; bei Straßen mit "Str." abgekürzt ggf. auch hier
+   abkürzen). Beim Einrichten wird der Kalender einmal testweise
+   abgerufen – klappt das nicht, wird ein Fehler mit Grund angezeigt.
 
 > Tipp: Funktioniert die automatische Erkennung der Abfallart für eine
 > Terminbezeichnung nicht (z. B. weil GEB den Text ändert), landet der
@@ -75,17 +64,19 @@ anpassen.
 ## Bekannte Einschränkungen
 
 - Es wird nur eine Adresse pro Integrationseintrag unterstützt. Für eine
-  zweite Adresse die Integration ein zweites Mal mit einem anderen
-  Kalender-Link hinzufügen.
+  zweite Adresse die Integration ein zweites Mal mit einer anderen
+  Straße/Hausnummer hinzufügen.
+- Die Straßen-Schreibweise muss zur GEB-internen Straßenliste passen
+  (z.B. "Fritz-Reuter-Str." statt "Fritz-Reuter-Straße"). Schlägt die
+  Einrichtung fehl, auf der GEB-Seite unter „Abfuhrkalender" die
+  Autovervollständigung prüfen und die dort vorgeschlagene Schreibweise
+  übernehmen.
 - Die Kategorisierung der Abfallart erfolgt per Schlüsselwortabgleich im
   Termintitel und deckt die bei GEB üblichen Bezeichnungen ab (Restmüll,
   Biomüll, Papier, Gelber Sack/Wertstoff, Sperrmüll, Grün-/Strauchschnitt,
   Schadstoffmobil, Weihnachtsbaum). Unbekannte Titel werden als eigener
   Sensor mit dem Originaltext als Name angelegt.
-
-## Mitentwickeln
-
-Wer den tatsächlichen internen API-Aufruf der GEB-Seite (z. B. per
-Browser-Netzwerkanalyse für `preview.php`) kennt, kann gerne einen echten
-Straße/Hausnummer-Konfigurationsschritt beisteuern, der den Kalender-Link
-automatisch ermittelt.
+- Der URL-Aufbau (`abfuhr.geb-goettingen.de/<Jahr>/forward.php`) wurde
+  anhand eines Live-Beispiels ermittelt (öffentliche API-Dokumentation
+  gibt es bei GEB nicht) und kann sich bei einer Website-Umstellung
+  ändern.

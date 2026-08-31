@@ -3,20 +3,21 @@
     "step": {
       "user": {
         "title": "Göttinger Müllkalender (GEB)",
-        "description": "Öffne https://www.geb-goettingen.de/abfuhr/, wähle deine Straße und Hausnummer aus und kopiere den Abo-/Exportlink des Kalenders (ICS oder webcal://) hierher. Falls die Seite nur einen Datei-Download anbietet, lade die .ics-Datei irgendwo mit einer öffentlich erreichbaren URL hoch (z.B. Nextcloud-Freigabe oder GitHub Gist) und trage diese URL hier ein.",
+        "description": "Straße und Hausnummer wie auf der GEB-Seite angeben (z.B. \"Lindenweg\" und \"15\"). Der Kalender-Link wird automatisch ermittelt.",
         "data": {
           "name": "Name",
-          "ics_url": "Kalender-URL (ICS/webcal)"
+          "street": "Straße",
+          "house_number": "Hausnummer"
         }
       }
     },
     "error": {
-      "cannot_connect": "Kalender konnte nicht geladen werden. Prüfe die URL und die Internetverbindung.",
+      "cannot_connect": "Kalender konnte nicht geladen werden. Prüfe Straße/Hausnummer und die Internetverbindung.",
       "timeout": "Zeitüberschreitung beim Abrufen des Kalenders.",
-      "no_events": "Unter der URL wurden keine Termine gefunden. Prüfe, ob es sich um den richtigen Export-Link handelt."
+      "no_events": "Unter Straße/Hausnummer wurden keine Termine gefunden. Prüfe die Schreibweise (z.B. \"Str.\" statt \"Straße\")."
     },
     "abort": {
-      "already_configured": "Diese Kalender-URL ist bereits konfiguriert."
+      "already_configured": "Diese Adresse ist bereits konfiguriert."
     }
   },
   "options": {

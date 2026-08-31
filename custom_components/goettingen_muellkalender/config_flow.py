@@ -3,19 +3,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import date
 from typing import Any
 
 import aiohttp
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
-    CONF_ICS_URL,
+    CONF_HOUSE_NUMBER,
     CONF_NAME,
     CONF_SCAN_INTERVAL,
+    CONF_STREET,
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL_HOURS,
     DOMAIN,
@@ -39,31 +41,38 @@ class GoettingenWasteConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            url = user_input[CONF_ICS_URL].strip()
+            street = user_input[CONF_STREET].strip()
+            house_number = user_input[CONF_HOUSE_NUMBER].strip()
             name = user_input.get(CONF_NAME, "").strip() or DEFAULT_NAME
 
-            self._async_abort_entries_match({CONF_ICS_URL: url})
+            self._async_abort_entries_match(
+                {CONF_STREET: street, CONF_HOUSE_NUMBER: house_number}
+            )
 
             try:
-                raw_text = await async_fetch_calendar_text(self.hass, url)
+                raw_text = await async_fetch_calendar_text(
+                    self.hass, street, house_number, date.today().year
+                )
                 events = parse_calendar(raw_text, LOOKBACK_DAYS, LOOKAHEAD_DAYS)
             except asyncio.TimeoutError:
                 errors["base"] = "timeout"
             except aiohttp.ClientError as err:
-                _LOGGER.debug("Could not fetch %s: %s", url, err)
+                _LOGGER.debug("Could not fetch calendar for %s %s: %s", street, house_number, err)
                 errors["base"] = "cannot_connect"
             else:
                 if not events:
                     errors["base"] = "no_events"
                 else:
                     return self.async_create_entry(
-                        title=name, data={CONF_ICS_URL: url}
+                        title=name,
+                        data={CONF_STREET: street, CONF_HOUSE_NUMBER: house_number},
                     )
 
         schema = vol.Schema(
             {
                 vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_ICS_URL): str,
+                vol.Required(CONF_STREET): str,
+                vol.Required(CONF_HOUSE_NUMBER): str,
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)

@@ -16,8 +16,10 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import (
     CATEGORY_DEFINITIONS,
-    CONF_ICS_URL,
+    CONF_HOUSE_NUMBER,
+    CONF_STREET,
     FALLBACK_ICON,
+    FORWARD_URL_TEMPLATE,
     LOOKAHEAD_DAYS,
     LOOKBACK_DAYS,
     MAX_UPCOMING_DATES,
@@ -27,6 +29,10 @@ from .ics_parser import parse_calendar
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30
+
+# GEB usually publishes next year's calendar in autumn. Fetching it a
+# little early keeps the sensors populated across the new-year rollover.
+NEXT_YEAR_FROM_MONTH = 11
 
 
 @dataclass
@@ -47,13 +53,6 @@ class WasteCategory:
         return self.dates[:MAX_UPCOMING_DATES]
 
 
-def normalize_calendar_url(url: str) -> str:
-    """Turn a webcal:// subscription link into a plain https:// URL."""
-    if url.lower().startswith("webcal://"):
-        return "https://" + url[len("webcal://"):]
-    return url
-
-
 def categorize(summary: str) -> tuple[str, str, str]:
     """Map a calendar event summary to (slug, display name, icon)."""
     lowered = summary.lower()
@@ -64,12 +63,15 @@ def categorize(summary: str) -> tuple[str, str, str]:
     return slug, summary.strip(), FALLBACK_ICON
 
 
-async def async_fetch_calendar_text(hass: HomeAssistant, url: str) -> str:
-    """Download the raw ICS/vCalendar payload for the given URL."""
+async def async_fetch_calendar_text(
+    hass: HomeAssistant, street: str, house_number: str, year: int
+) -> str:
+    """Download the raw ICS payload for one street/house number/year."""
     session = async_get_clientsession(hass)
-    fetch_url = normalize_calendar_url(url)
+    url = FORWARD_URL_TEMPLATE.format(year=year)
+    params = {"str": f"{street} ", "nr": house_number, "year": str(year)}
     async with asyncio.timeout(REQUEST_TIMEOUT):
-        response = await session.get(fetch_url)
+        response = await session.get(url, params=params)
         response.raise_for_status()
         return await response.text()
 
@@ -87,18 +89,38 @@ class GoettingenWasteCoordinator(DataUpdateCoordinator[dict[str, WasteCategory]]
             update_interval=update_interval,
         )
         self._hass = hass
-        self._url = entry.data[CONF_ICS_URL]
+        self.street: str = entry.data[CONF_STREET]
+        self.house_number: str = entry.data[CONF_HOUSE_NUMBER]
+
+    def _years_to_fetch(self) -> list[int]:
+        today = date.today()
+        years = [today.year]
+        if today.month >= NEXT_YEAR_FROM_MONTH:
+            years.append(today.year + 1)
+        return years
 
     async def _async_update_data(self) -> dict[str, WasteCategory]:
-        try:
-            raw_text = await async_fetch_calendar_text(self._hass, self._url)
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            raise UpdateFailed(f"Fehler beim Abrufen des Kalenders: {err}") from err
+        raw_events: dict[str, list[date]] = {}
+        last_error: Exception | None = None
 
-        raw_events = parse_calendar(raw_text, LOOKBACK_DAYS, LOOKAHEAD_DAYS)
+        for year in self._years_to_fetch():
+            try:
+                raw_text = await async_fetch_calendar_text(
+                    self._hass, self.street, self.house_number, year
+                )
+            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+                _LOGGER.debug("Fetching %s calendar for %s failed: %s", year, self.street, err)
+                last_error = err
+                continue
+
+            for summary, dates in parse_calendar(raw_text, LOOKBACK_DAYS, LOOKAHEAD_DAYS).items():
+                raw_events.setdefault(summary, []).extend(dates)
+
         if not raw_events:
             raise UpdateFailed(
-                "Der Kalender konnte nicht gelesen werden oder enthält keine Termine."
+                "Der Kalender konnte nicht gelesen werden oder enthält keine Termine. "
+                "Prüfe Straße und Hausnummer."
+                + (f" Letzter Fehler: {last_error}" if last_error else "")
             )
 
         today = date.today()
