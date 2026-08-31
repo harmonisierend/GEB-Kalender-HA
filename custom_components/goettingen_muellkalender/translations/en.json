@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Göttingen waste calendar (GEB)",
+        "description": "Open https://www.geb-goettingen.de/abfuhr/, select your street and house number, and copy the calendar's subscribe/export link (ICS or webcal://) here. If the site only offers a file download, upload the .ics file somewhere with a publicly reachable URL (e.g. a Nextcloud share or GitHub Gist) and enter that URL instead.",
+        "data": {
+          "name": "Name",
+          "ics_url": "Calendar URL (ICS/webcal)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not load the calendar. Check the URL and your internet connection.",
+      "timeout": "Timed out while fetching the calendar.",
+      "no_events": "No events were found at that URL. Make sure it's the correct export link."
+    },
+    "abort": {
+      "already_configured": "This calendar URL is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update interval",
+        "data": {
+          "scan_interval": "Refresh interval (hours)"
+        }
+      }
+    }
+  }
+}
