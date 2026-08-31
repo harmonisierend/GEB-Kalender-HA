@@ -3,8 +3,8 @@
   "name": "Göttinger Müllkalender (GEB)",
   "codeowners": ["@harmonisierend"],
   "config_flow": true,
-  "documentation": "https://github.com/harmonisierend/claude",
-  "issue_tracker": "https://github.com/harmonisierend/claude/issues",
+  "documentation": "https://github.com/harmonisierend/GEB-Kalender-HA",
+  "issue_tracker": "https://github.com/harmonisierend/GEB-Kalender-HA/issues",
   "iot_class": "cloud_polling",
   "requirements": ["icalendar>=5.0.0", "recurring-ical-events>=2.1.0"],
   "version": "1.0.0"

@@ -25,7 +25,7 @@ befüllt bleiben.
 ## Installation über HACS
 
 1. HACS öffnen → **Integrationen** → Menü (⋮) oben rechts → **Benutzerdefinierte Repositories**.
-2. Dieses Repository (`https://github.com/harmonisierend/claude`) als
+2. Dieses Repository (`https://github.com/harmonisierend/GEB-Kalender-HA`) als
    Repository-Typ **Integration** hinzufügen.
 3. "Göttinger Müllkalender (GEB)" in HACS suchen und installieren.
 4. Home Assistant neu starten.
