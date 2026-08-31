@@ -30,6 +30,17 @@ _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30
 
+# GEB's web server rejects requests without a browser-like User-Agent
+# (returns 403 Forbidden for generic HTTP client user agents).
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/calendar,text/html,*/*;q=0.8",
+    "Accept-Language": "de-DE,de;q=0.9",
+}
+
 # GEB usually publishes next year's calendar in autumn. Fetching it a
 # little early keeps the sensors populated across the new-year rollover.
 NEXT_YEAR_FROM_MONTH = 11
@@ -71,7 +82,7 @@ async def async_fetch_calendar_text(
     url = FORWARD_URL_TEMPLATE.format(year=year)
     params = {"str": f"{street} ", "nr": house_number, "year": str(year)}
     async with asyncio.timeout(REQUEST_TIMEOUT):
-        response = await session.get(url, params=params)
+        response = await session.get(url, params=params, headers=REQUEST_HEADERS)
         response.raise_for_status()
         return await response.text()
 
